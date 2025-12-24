@@ -67,7 +67,8 @@ The app includes comprehensive error handling:
 - **Expo** - Development platform
 - **TypeScript** - Type safety
 - **Expo Router** - File-based navigation
-- **React Native Blob Util** - File operations
+- **JSZip** - ZIP file extraction
+- **Expo File System** - File operations
 - **AsyncStorage** - Local persistence
 
 ## 📱 Supported Formats

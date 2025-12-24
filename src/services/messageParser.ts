@@ -98,15 +98,17 @@ export class MessageParser {
    */
   private static testDateFormat(line: string, format: string): boolean {
     try {
-      const delimiter = format.includes('.') ? '\\.' : '/';
+      const delimiter = format.includes('.') ? '.' : '/';
+      const escapedDelimiter = delimiter === '.' ? '\\.' : '/';
       const datePattern = format
         .replace(/DD/g, '\\d{1,2}')
         .replace(/MM/g, '\\d{1,2}')
         .replace(/YY/g, '\\d{2,4}')
-        .replace(/YYYY/g, '\\d{4}');
+        .replace(/YYYY/g, '\\d{4}')
+        .replace(/\//g, escapedDelimiter);
       
       const regex = new RegExp(
-        `^\\[?(${datePattern}[${delimiter}])?,\\s*\\d{1,2}[:.]\\d{2}(?:[:.]\\d{2})?\\s*(?:AM|PM)?\\]?\\s*-\\s*.+:.+`,
+        `^\\[?(${datePattern})?,\\s*\\d{1,2}[:.]\\d{2}(?:[:.]\\d{2})?\\s*(?:AM|PM)?\\]?\\s*-\\s*.+:.+`,
         'i'
       );
       

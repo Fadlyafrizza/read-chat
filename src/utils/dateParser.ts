@@ -44,7 +44,7 @@ export function parseWhatsAppDate(
     }
     
     // Parse time
-    const timeMatch = timePart.match(/(\d{1,2})[:.:](\d{2})(?:[:.:](\d{2}))?\s*(AM|PM)?/i);
+    const timeMatch = timePart.match(/(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?\s*(AM|PM)?/i);
     if (!timeMatch) return null;
     
     let hour = parseInt(timeMatch[1]);
