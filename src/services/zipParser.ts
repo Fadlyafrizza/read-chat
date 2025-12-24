@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system';
-import ReactNativeBlobUtil from 'react-native-blob-util';
+import JSZip from 'jszip';
 import { Chat } from '../types';
 import { MessageParser } from './messageParser';
 import { Validators } from '../utils/validators';
@@ -102,15 +102,52 @@ export class ZipParser {
    */
   private static async extractZip(zipUri: string, extractPath: string): Promise<string> {
     try {
-      // Use react-native-blob-util for ZIP extraction
-      const zipPath = zipUri.replace('file://', '');
+      // Read ZIP file as base64
+      const zipContent = await FileSystem.readAsStringAsync(zipUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Load ZIP
+      const zip = await JSZip.loadAsync(zipContent, { base64: true });
+
+      // Extract all files
+      const promises: Promise<void>[] = [];
       
-      await ReactNativeBlobUtil.fs.unzip(zipPath, extractPath);
+      zip.forEach((relativePath, file) => {
+        if (file.dir) {
+          // Create directory
+          const promise = FileSystem.makeDirectoryAsync(
+            `${extractPath}/${relativePath}`,
+            { intermediates: true }
+          ).catch(() => {
+            // Ignore directory creation errors
+          });
+          promises.push(promise);
+        } else {
+          // Extract file
+          const promise = file.async('base64').then(async (content) => {
+            const filePath = `${extractPath}/${relativePath}`;
+            const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+            
+            // Ensure directory exists
+            await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true })
+              .catch(() => {}); // Ignore if already exists
+            
+            // Write file
+            await FileSystem.writeAsStringAsync(filePath, content, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          });
+          promises.push(promise);
+        }
+      });
+
+      await Promise.all(promises);
       
       return extractPath;
     } catch (error) {
       console.error('Error extracting ZIP:', error);
-      throw new Error('Failed to extract ZIP file');
+      throw error instanceof Error ? error : new Error('Failed to extract ZIP file');
     }
   }
 
