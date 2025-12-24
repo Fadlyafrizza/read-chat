@@ -95,6 +95,9 @@ export class MessageParser {
 
   /**
    * Test if line matches given date format
+   * Builds a regex pattern to match WhatsApp message format:
+   * [DD/MM/YY, HH:MM:SS AM/PM] - Sender: Message
+   * Supports various date separators (/ or .) and optional seconds
    */
   private static testDateFormat(line: string, format: string): boolean {
     try {
@@ -107,6 +110,15 @@ export class MessageParser {
         .replace(/YYYY/g, '\\d{4}')
         .replace(/\//g, escapedDelimiter);
       
+      // Pattern breakdown:
+      // ^\[? - Optional opening bracket
+      // (${datePattern})? - Date part with format-specific pattern
+      // ,\s* - Comma and optional whitespace
+      // \d{1,2}[:.]\\d{2}(?:[:.]\\d{2})? - Time (HH:MM or HH:MM:SS)
+      // \s*(?:AM|PM)? - Optional AM/PM
+      // \]? - Optional closing bracket
+      // \s*-\s* - Separator dash with whitespace
+      // .+:.+ - Sender and message (text:text)
       const regex = new RegExp(
         `^\\[?(${datePattern})?,\\s*\\d{1,2}[:.]\\d{2}(?:[:.]\\d{2})?\\s*(?:AM|PM)?\\]?\\s*-\\s*.+:.+`,
         'i'

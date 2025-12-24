@@ -119,8 +119,9 @@ export class ZipParser {
           const promise = FileSystem.makeDirectoryAsync(
             `${extractPath}/${relativePath}`,
             { intermediates: true }
-          ).catch(() => {
-            // Ignore directory creation errors
+          ).catch((err) => {
+            console.warn('Directory creation warning:', err);
+            // Ignore directory creation errors as they may already exist
           });
           promises.push(promise);
         } else {
@@ -131,7 +132,9 @@ export class ZipParser {
             
             // Ensure directory exists
             await FileSystem.makeDirectoryAsync(dirPath, { intermediates: true })
-              .catch(() => {}); // Ignore if already exists
+              .catch((err) => {
+                console.warn('Directory exists or creation warning:', err);
+              });
             
             // Write file
             await FileSystem.writeAsStringAsync(filePath, content, {

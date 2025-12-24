@@ -1,5 +1,5 @@
 /**
- * Global error handler untuk menangkap unhandled errors
+ * Global error handler to handle unhandled errors
  */
 export class ErrorHandler {
   static setup() {
