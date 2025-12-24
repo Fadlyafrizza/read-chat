@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "WhatsApp Chat Parser",
+    "slug": "read-chat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "read-chat",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#128C7E"
+    },
+    "platforms": ["ios", "android"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fadlyafrizza.readchat"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#128C7E"
+      },
+      "package": "com.fadlyafrizza.readchat",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    }
+  }
+}
