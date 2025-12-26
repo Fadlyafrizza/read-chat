@@ -80,15 +80,39 @@ export class MessageParser {
    * Detect date format from chat content
    */
   private static detectDateFormat(lines: string[]): string | null {
-    const formats = ['DD/MM/YY', 'MM/DD/YY', 'YYYY/MM/DD', 'DD.MM.YY', 'MM.DD.YY'];
+    // Common WhatsApp date formats in order of prevalence
+    const formats = [
+      'DD/MM/YY',   // 31/12/23 (most common internationally)
+      'MM/DD/YY',   // 12/31/23 (US format)
+      'DD/MM/YYYY', // 31/12/2023 (full year)
+      'MM/DD/YYYY', // 12/31/2023 (US full year)
+      'YYYY/MM/DD', // 2023/12/31 (ISO-like)
+      'DD.MM.YY',   // 31.12.23 (European)
+      'MM.DD.YY',   // 12.31.23 (US with dots)
+      'DD.MM.YYYY', // 31.12.2023 (European full)
+      'DD-MM-YY',   // 31-12-23 (with dashes)
+      'MM-DD-YY',   // 12-31-23 (US with dashes)
+      'DD-MM-YYYY', // 31-12-2023 (with dashes full)
+      'YYYY-MM-DD', // 2023-12-31 (ISO format)
+    ];
     
-    for (const line of lines.slice(0, 50)) {
+    // Check first 100 lines to find a matching format
+    for (const line of lines.slice(0, 100)) {
+      if (!line.trim()) continue;
+      
       for (const format of formats) {
         if (this.testDateFormat(line, format)) {
+          console.log(`Detected date format: ${format} from line: ${line.substring(0, 50)}`);
           return format;
         }
       }
     }
+    
+    // Log first few lines for debugging if no format found
+    console.error('Could not detect date format. First lines:');
+    lines.slice(0, 5).forEach((line, i) => {
+      console.error(`Line ${i + 1}: ${line.substring(0, 100)}`);
+    });
     
     return null;
   }
@@ -97,35 +121,47 @@ export class MessageParser {
    * Test if line matches given date format
    * Builds a regex pattern to match WhatsApp message format:
    * [DD/MM/YY, HH:MM:SS AM/PM] - Sender: Message
-   * Supports various date separators (/ or .) and optional seconds
+   * Supports various date separators (/, ., -) and optional seconds
    */
   private static testDateFormat(line: string, format: string): boolean {
     try {
-      const delimiter = format.includes('.') ? '.' : '/';
-      const escapedDelimiter = delimiter === '.' ? '\\.' : '/';
+      // Determine delimiter from format
+      let delimiter = '/';
+      let escapedDelimiter = '/';
+      if (format.includes('.')) {
+        delimiter = '.';
+        escapedDelimiter = '\\.';
+      } else if (format.includes('-')) {
+        delimiter = '-';
+        escapedDelimiter = '-';
+      }
+      
       const datePattern = format
         .replace(/DD/g, '\\d{1,2}')
         .replace(/MM/g, '\\d{1,2}')
         .replace(/YY/g, '\\d{2,4}')
         .replace(/YYYY/g, '\\d{4}')
-        .replace(/\//g, escapedDelimiter);
+        .replace(/\//g, escapedDelimiter)
+        .replace(/\./g, escapedDelimiter)
+        .replace(/-/g, escapedDelimiter);
       
       // Pattern breakdown:
       // ^\[? - Optional opening bracket
-      // (${datePattern})? - Date part with format-specific pattern
+      // (${datePattern}) - Date part with format-specific pattern (REQUIRED)
       // ,\s* - Comma and optional whitespace
       // \d{1,2}[:.]\\d{2}(?:[:.]\\d{2})? - Time (HH:MM or HH:MM:SS)
       // \s*(?:AM|PM)? - Optional AM/PM
       // \]? - Optional closing bracket
       // \s*-\s* - Separator dash with whitespace
-      // .+:.+ - Sender and message (text:text)
+      // [^:]+:.+ - Sender (no colons) then colon then message
       const regex = new RegExp(
-        `^\\[?(${datePattern})?,\\s*\\d{1,2}[:.]\\d{2}(?:[:.]\\d{2})?\\s*(?:AM|PM)?\\]?\\s*-\\s*.+:.+`,
+        `^\\[?(${datePattern}),\\s*\\d{1,2}[:.]\\d{2}(?:[:.]\\d{2})?\\s*(?:AM|PM)?\\]?\\s*-\\s*[^:]+:.+`,
         'i'
       );
       
       return regex.test(line);
-    } catch {
+    } catch (error) {
+      console.error(`Error testing date format ${format}:`, error);
       return false;
     }
   }
